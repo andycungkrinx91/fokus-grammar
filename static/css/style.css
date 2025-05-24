@@ -1,0 +1,145 @@
+/* Main Styles for Fokus Grammar */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-bottom: 100px; /* Add padding for fixed submit button */
+}
+
+.container {
+    max-width: 900px;
+}
+
+header {
+    margin-top: 2rem;
+}
+
+/* Fixed position elements */
+.fixed-bottom-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+/* Fixed feedback */
+.fixed-feedback {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1100;
+    width: 80%;
+    max-width: 500px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Question Card Styles */
+#questionCard {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+#questionCard:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Topic Badge Styles */
+.topic-badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.topic-badge:hover {
+    background-color: #0dcaf0 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+}
+
+.topic-badge:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.topic-badge::after {
+    content: '\f059';  /* question mark icon */
+    font-family: 'bootstrap-icons';
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
+/* Option Styles */
+.option-label {
+    display: block;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.option-label:hover {
+    background-color: #f1f3f5;
+}
+
+.option-input:checked + .option-label {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+    font-weight: 500;
+}
+
+.option-input {
+    display: none;
+}
+
+/* Feedback Styles */
+#feedbackCard.correct {
+    border-color: #28a745;
+}
+
+#feedbackCard.incorrect {
+    border-color: #dc3545;
+}
+
+#feedbackHeader.correct {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+#feedbackHeader.incorrect {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* Loading Spinner */
+#loadingSpinner {
+    margin: 2rem 0;
+}
+
+/* Animation for new questions */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    #questionCard, #feedbackCard {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+}
