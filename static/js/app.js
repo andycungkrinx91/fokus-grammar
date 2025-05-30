@@ -16,6 +16,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const explanationContent = document.getElementById('explanationContent');
     const loadingSpinner = document.getElementById('loadingSpinner');
     const errorAlert = document.getElementById('errorAlert');
+    const toggleQuestionBtn = document.getElementById('toggleQuestionBtn');
+    const playAudioBtn = document.getElementById('playAudioBtn');
+    const questionAudio = document.getElementById('questionAudio');
+    const audioContainer = document.getElementById('audioContainer');
+    const audioStatus = document.getElementById('audioStatus');
 
     // Questions data
     let questions = [];
@@ -27,9 +32,62 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event Listeners
     generateBtn.addEventListener('click', generateQuestion);
     checkAnswerBtn.addEventListener('click', checkAnswer);
+    toggleQuestionBtn.addEventListener('click', toggleQuestionText);
+    playAudioBtn.addEventListener('click', playQuestionAudio);
 
     // Initialize by loading existing questions
     loadQuestions();
+    
+    // Function to toggle question text visibility
+    function toggleQuestionText() {
+        if (questionText.classList.contains('d-none')) {
+            questionText.classList.remove('d-none');
+            toggleQuestionBtn.innerHTML = '<i class="bi bi-eye-slash"></i> Hide Question';
+        } else {
+            questionText.classList.add('d-none');
+            toggleQuestionBtn.innerHTML = '<i class="bi bi-eye"></i> Show Question';
+        }
+    }
+    
+    // Function to play question audio
+    function playQuestionAudio() {
+        if (currentQuestion && currentQuestion.audio_url) {
+            questionAudio.play();
+        }
+    }
+    
+    // Function to check if audio is ready and update UI
+    function checkAudioReady(audioUrl) {
+        if (!audioUrl) return;
+        
+        const filename = audioUrl.split('/').pop();
+        
+        // Show audio status
+        audioStatus.classList.remove('d-none');
+        playAudioBtn.disabled = true;
+        
+        // Check if audio is ready every second
+        const checkInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/api/check-audio/${filename}`);
+                const data = await response.json();
+                
+                if (data.ready) {
+                    // Audio is ready, update UI
+                    clearInterval(checkInterval);
+                    audioStatus.classList.add('d-none');
+                    audioContainer.classList.remove('d-none');
+                    playAudioBtn.disabled = false;
+                    
+                    // Set audio source
+                    questionAudio.src = audioUrl;
+                    questionAudio.load();
+                }
+            } catch (error) {
+                console.error('Error checking audio status:', error);
+            }
+        }, 1000);
+    }
 
     // Functions
     async function loadQuestions() {
@@ -162,9 +220,98 @@ document.addEventListener('DOMContentLoaded', function() {
         const bodyDiv = document.createElement('div');
         bodyDiv.className = 'card-body';
         
-        // Add question number and text
+        // Add audio controls and question toggle
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'd-flex justify-content-between align-items-center mb-3';
+        
+        // Controls container
+        const buttonsDiv = document.createElement('div');
+        
+        // Toggle question button
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'btn btn-sm btn-outline-secondary me-2';
+        toggleBtn.innerHTML = '<i class="bi bi-eye"></i> Show Question';
+        toggleBtn.addEventListener('click', function() {
+            const questionTextEl = this.closest('.card-body').querySelector('.question-text');
+            if (questionTextEl.classList.contains('d-none')) {
+                questionTextEl.classList.remove('d-none');
+                this.innerHTML = '<i class="bi bi-eye-slash"></i> Hide Question';
+            } else {
+                questionTextEl.classList.add('d-none');
+                this.innerHTML = '<i class="bi bi-eye"></i> Show Question';
+            }
+        });
+        buttonsDiv.appendChild(toggleBtn);
+        
+        // Play audio button
+        const playBtn = document.createElement('button');
+        playBtn.className = 'btn btn-sm btn-outline-primary';
+        playBtn.innerHTML = '<i class="bi bi-volume-up"></i> Play Audio';
+        playBtn.disabled = true; // Initially disabled until audio is ready
+        
+        // Audio status
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'text-muted small';
+        statusDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Generating audio...';
+        
+        // Audio container
+        const audioDiv = document.createElement('div');
+        audioDiv.className = 'mb-3 d-none';
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.className = 'w-100';
+        audio.innerHTML = 'Your browser does not support the audio element.';
+        audioDiv.appendChild(audio);
+        
+        // Set up audio if available
+        if (question.audio_url) {
+            // Function to check if audio is ready
+            const checkAudio = async () => {
+                const filename = question.audio_url.split('/').pop();
+                try {
+                    const response = await fetch(`/api/check-audio/${filename}`);
+                    const data = await response.json();
+                    
+                    if (data.ready) {
+                        statusDiv.classList.add('d-none');
+                        audioDiv.classList.remove('d-none');
+                        playBtn.disabled = false;
+                        
+                        // Set audio source
+                        audio.src = question.audio_url;
+                        audio.load();
+                        
+                        // Clear interval
+                        clearInterval(checkInterval);
+                    }
+                } catch (error) {
+                    console.error('Error checking audio status:', error);
+                }
+            };
+            
+            // Check audio status every second
+            const checkInterval = setInterval(checkAudio, 1000);
+            
+            // Add play button event listener
+            playBtn.addEventListener('click', function() {
+                audio.play();
+            });
+            
+            buttonsDiv.appendChild(playBtn);
+            controlsDiv.appendChild(buttonsDiv);
+            controlsDiv.appendChild(statusDiv);
+            bodyDiv.appendChild(controlsDiv);
+            bodyDiv.appendChild(audioDiv);
+        } else {
+            // No audio available
+            buttonsDiv.appendChild(playBtn);
+            controlsDiv.appendChild(buttonsDiv);
+            bodyDiv.appendChild(controlsDiv);
+        }
+        
+        // Add question number and text (initially hidden)
         const titleH5 = document.createElement('h5');
-        titleH5.className = 'card-title mb-4';
+        titleH5.className = 'card-title mb-4 question-text d-none';
         titleH5.innerHTML = `<span class="badge bg-secondary me-2">${index + 1}</span> ${question.question}`;
         bodyDiv.appendChild(titleH5);
         

@@ -1,9 +1,13 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from flask_cors import CORS
 import requests
 import json
 import os
 import time
+import tempfile
+import pyttsx3
+import uuid
+import threading
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -21,6 +25,10 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 QUESTIONS_FILE = os.path.join(DATA_DIR, "grammar_questions.json")
 TOPIC_INFO_FILE = os.path.join(DATA_DIR, "grammar_topics.json")
+
+# Path to store audio files
+AUDIO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "audio")
+os.makedirs(AUDIO_DIR, exist_ok=True)
 
 # Initialize files if they don't exist
 if not os.path.exists(QUESTIONS_FILE):
@@ -162,8 +170,8 @@ def generate_questions():
     
     # Prepare messages for LM Studio
     messages = [
-        {"role": "system", "content": "You are a helpful assistant that generates English grammar practice questions. Create challenging but clear questions that test understanding of grammar rules. Provide explanations in both English and Indonesian languages."}, 
-        {"role": "user", "content": f"Generate {count} {difficulty} level English grammar questions with explanations in both English and Indonesian"}
+        {"role": "system", "content": "You are a helpful assistant that generates English grammar practice questions. Create challenging but clear questions that test understanding of grammar rules. Provide explanations in both English and Indonesian languages. /no_think"}, 
+        {"role": "user", "content": f"Generate {count} {difficulty} level English grammar questions with explanations in both English and Indonesian. /no_think"}
     ]
     
     if topic:
@@ -181,25 +189,33 @@ def generate_questions():
             tool_call = message["tool_calls"][0]
             if tool_call["function"]["name"] == "generate_grammar_questions":
                 try:
-                    response_data = json.loads(tool_call["function"]["arguments"])
-                    generated_questions = response_data.get("questions", [])
+                    grammar_info = json.loads(tool_call["function"]["arguments"])
+                    questions = grammar_info.get("questions", [])
                     
-                    if not generated_questions:
-                        return jsonify({"success": False, "error": "No questions were generated"})
+                    # Generate audio for each question
+                    for question in questions:
+                        # Generate a unique filename
+                        filename = f"{uuid.uuid4()}.mp3"
+                        filepath = os.path.join(AUDIO_DIR, filename)
+                        
+                        # Store the audio URL in the question
+                        question["audio_url"] = f"/static/audio/{filename}"
+                        
+                        # Generate speech in a separate thread
+                        threading.Thread(
+                            target=generate_speech, 
+                            args=(question["question"], filepath)
+                        ).start()
                     
-                    # Load existing questions
-                    questions = load_questions()
+                    # Update existing questions
+                    existing_questions = load_questions()
+                    existing_questions.extend(questions)
+                    save_questions(existing_questions)
                     
-                    # Add IDs to new questions and save them
-                    next_id = len(questions) + 1
-                    for i, q in enumerate(generated_questions):
-                        q["id"] = next_id + i
-                    
-                    # Add new questions to existing ones
-                    questions.extend(generated_questions)
-                    save_questions(questions)
-                    
-                    return jsonify({"success": True, "questions": generated_questions})
+                    return jsonify({
+                        "success": True,
+                        "questions": questions
+                    })
                 except json.JSONDecodeError as e:
                     return jsonify({"success": False, "error": f"Invalid JSON from LM Studio: {str(e)}"})
         
@@ -311,8 +327,8 @@ def check_answers():
     
     # Prepare messages for LM Studio
     messages = [
-        {"role": "system", "content": "You are a helpful assistant that evaluates answers to grammar questions. Provide detailed feedback on why answers are correct or incorrect. Your feedback must be provided in both English and Indonesian languages."}, 
-        {"role": "user", "content": content}
+        {"role": "system", "content": "You are a helpful assistant that evaluates answers to grammar questions. Provide detailed feedback on why answers are correct or incorrect. Your feedback must be provided in both English and Indonesian languages. /no_think"}, 
+        {"role": "user", "content": content + " /no_think"}
     ]
     
     # Call LM Studio API
@@ -454,8 +470,8 @@ def grammar_topic_info():
     
     # Prepare messages for LM Studio
     messages = [
-        {"role": "system", "content": "You are a helpful assistant that provides detailed information about English grammar topics. Provide comprehensive explanations with examples in both English and Indonesian languages. Format your response with Markdown for better readability, including headings, paragraphs, lists, and emphasis where appropriate. When providing Indonesian explanations, DO NOT translate the English example sentences to Indonesian - keep all examples in English to avoid confusion. Instead, explain the grammar rules and concepts in Indonesian while keeping all example sentences in English."}, 
-        {"role": "user", "content": f"Provide detailed information about the grammar topic '{topic}'. Include explanations of the rules, usage patterns, and appropriate examples. For verb tenses, include examples of positive, negative, and question forms. For other topics like articles, prepositions, etc., provide examples that demonstrate correct usage. Make the explanation very detailed and comprehensive."}
+        {"role": "system", "content": "You are a helpful assistant that provides detailed information about English grammar topics. Provide comprehensive explanations with examples in both English and Indonesian languages. Format your response with Markdown for better readability, including headings, paragraphs, lists, and emphasis where appropriate. When providing Indonesian explanations, DO NOT translate the English example sentences to Indonesian - keep all examples in English to avoid confusion. Instead, explain the grammar rules and concepts in Indonesian while keeping all example sentences in English. /no_think"}, 
+        {"role": "user", "content": f"Provide detailed information about the grammar topic '{topic}'. Include explanations of the rules, usage patterns, and appropriate examples. For verb tenses, include examples of positive, negative, and question forms. For other topics like articles, prepositions, etc., provide examples that demonstrate correct usage. Make the explanation very detailed and comprehensive. /no_think"}
     ]
     
     # Call LM Studio API
@@ -541,6 +557,63 @@ def grammar_topic_info():
                 })
     
     return jsonify({"success": False, "error": "Failed to get grammar information"})
+
+# Text-to-speech functionality
+def generate_speech(text, filename):
+    """Generate speech from text and save to a file"""
+    try:
+        engine = pyttsx3.init()
+        # Set properties (optional)
+        engine.setProperty('rate', 150)  # Speed of speech
+        engine.setProperty('volume', 1.0)  # Volume (0.0 to 1.0)
+        
+        # Get available voices
+        voices = engine.getProperty('voices')
+        # Use a female voice if available (typically the second voice)
+        if len(voices) > 1:
+            engine.setProperty('voice', voices[1].id)
+        
+        # Save to file
+        engine.save_to_file(text, filename)
+        engine.runAndWait()
+        return True
+    except Exception as e:
+        print(f"Error generating speech: {e}")
+        return False
+
+# Route to generate and serve TTS audio
+@app.route('/api/tts', methods=['POST'])
+def text_to_speech():
+    data = request.json
+    text = data.get('text', '')
+    
+    if not text:
+        return jsonify({"success": False, "error": "No text provided"})
+    
+    # Generate a unique filename
+    filename = f"{uuid.uuid4()}.mp3"
+    filepath = os.path.join(AUDIO_DIR, filename)
+    
+    # Generate speech in a separate thread to avoid blocking
+    def generate_in_thread():
+        generate_speech(text, filepath)
+    
+    # Start the thread
+    thread = threading.Thread(target=generate_in_thread)
+    thread.start()
+    
+    # Return the URL to the audio file
+    audio_url = f"/static/audio/{filename}"
+    return jsonify({"success": True, "audio_url": audio_url})
+
+# Route to check if audio file is ready
+@app.route('/api/check-audio/<filename>', methods=['GET'])
+def check_audio(filename):
+    filepath = os.path.join(AUDIO_DIR, filename)
+    if os.path.exists(filepath) and os.path.getsize(filepath) > 0:
+        return jsonify({"ready": True})
+    else:
+        return jsonify({"ready": False})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

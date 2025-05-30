@@ -53,7 +53,27 @@
                         <span id="questionDifficulty" class="badge bg-secondary">Difficulty</span>
                     </div>
                     <div class="card-body">
-                        <h5 id="questionText" class="card-title mb-4">Question text will appear here</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <button id="toggleQuestionBtn" class="btn btn-sm btn-outline-secondary me-2">
+                                    <i class="bi bi-eye"></i> Show/Hide Question
+                                </button>
+                                <button id="playAudioBtn" class="btn btn-sm btn-outline-primary" disabled>
+                                    <i class="bi bi-volume-up"></i> Play Audio
+                                </button>
+                            </div>
+                            <div id="audioStatus" class="text-muted small d-none">
+                                <i class="bi bi-hourglass-split"></i> Generating audio...
+                            </div>
+                        </div>
+                        
+                        <div id="audioContainer" class="mb-3 d-none">
+                            <audio id="questionAudio" controls class="w-100">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                        
+                        <h5 id="questionText" class="card-title mb-4 d-none">Question text will appear here</h5>
                         
                         <div id="options" class="mb-4">
                             <!-- Options will be generated here -->
