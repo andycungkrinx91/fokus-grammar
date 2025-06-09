@@ -16,7 +16,7 @@ A web application for English grammar practice with AI assistance. This applicat
 
 - Python 3.9 or higher
 - Poetry (for dependency management)
-- LM Studio running locally with a compatible model (e.g., qwen3-8b)
+- Llama running locally with a compatible model (e.g., OpenChat-3.5-7B-Qwen-v2.0.Q4_K_M.gguf)
 - Speakers or headphones for audio playback
 
 ## Installation
@@ -32,8 +32,8 @@ A web application for English grammar practice with AI assistance. This applicat
 
 ## Running the Application
 
-1. Start LM Studio and load a compatible model (e.g., qwen3-8b)
-2. Make sure the LM Studio API server is running on http://127.0.0.1:1234
+1. Start Llama and load a compatible model (e.g., OpenChat-3.5-7B-Qwen-v2.0.Q4_K_M.gguf)
+2. Make sure the Llama API server is running on http://localhost:8000
 3. Run the application using the provided batch file:
    ```
    run.bat
@@ -50,9 +50,9 @@ A web application for English grammar practice with AI assistance. This applicat
 6. Click "Check Answer" to submit your answer and receive feedback
 7. Review the feedback and explanation to improve your understanding
 
-## LM Studio Integration
+## Llama Integration
 
-This application integrates with LM Studio to generate grammar questions and provide feedback. Make sure LM Studio is running with a compatible model before using the application.
+This application integrates with Llama to generate grammar questions and provide feedback. Make sure Llama is running with a compatible model before using the application.
 
 ## File Structure
 

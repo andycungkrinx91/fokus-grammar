@@ -1,0 +1,76 @@
+networks:
+  grammar-network:
+    external: true
+    name: grammar-network
+
+services:
+  llama:
+    image: andycungkrinx91/llama.cpp.server:${LLAMA_TYPE}
+    container_name: llama
+    restart: unless-stopped
+    network_mode: "service:network-service"
+    cap_add:
+      - SYS_RESOURCE
+    volumes:
+      - ./data-llama/models:/data/models
+    command: [
+      "--port", "8000",
+      "--host", "0.0.0.0",
+      "-m", "/data/models/${LLAMA_MODEL_NAME}",
+      "-n", "${LLAMA_MAX_TOKEN}",
+      "-t", "${LLAMA_THREADS}",
+      "--batch-size", "${LLAMA_BATCH_SIZE}",
+      "--ctx-size", "${LLAMA_CTX_SIZE}",
+      "--temp", "${LLAMA_TEMP}",
+      "--top-k", "${LLAMA_TOP_K}",
+      "--top-p", "${LLAMA_TOP_P}",
+      "--gpu-layers", "${LLAMA_GPU_LAYERS}",
+      "--jinja"
+    ]
+    environment:
+      MODEL_PATH: "/data/models/${LLAMA_MODEL_NAME}"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - count: all
+              capabilities: [gpu]
+  focus-grammar:
+    build: ./backend
+    container_name: focus-grammar
+    restart: unless-stopped
+    network_mode: "service:network-service"
+    volumes:
+      - ./backend/data:/app/data
+    environment:
+      LLAMA_SERVER: ${LLAMA_SERVER}
+      LLAMA_CPP_API_URL: ${LLAMA_CPP_API_URL}
+      LLAMA_MODEL_NAME: ${LLAMA_MODEL_NAME}
+      DEFAULT_TTS_VOICE: ${DEFAULT_TTS_VOICE}
+      DEFAULT_MODEL_PROVIDER: ${DEFAULT_MODEL_PROVIDER}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      GOOGLE_MODEL_NAME: ${GOOGLE_MODEL_NAME}
+  
+  network-service:
+    image: alpine
+    container_name: network-service
+    restart: unless-stopped
+    ports:
+      - 5000:5000 # fokus-grammar
+      - 8000:8000
+
+    command: tail -f /dev/null
+    networks:
+      - grammar-network
+    deploy:
+      resources:
+        limits:
+          cpus: 0.3
+          memory: 300M
+        reservations:
+          cpus: 0.2
+          memory: 200M
+
+volumes:
+  focus-grammar: {}
+  llama: {}
