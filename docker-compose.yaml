@@ -14,6 +14,7 @@ services:
     volumes:
       - ./data-llama/models:/data/models
     command: [
+      "--server",
       "--port", "8000",
       "--host", "0.0.0.0",
       "-m", "/data/models/${LLAMA_MODEL_NAME}",
@@ -29,19 +30,16 @@ services:
     ]
     environment:
       MODEL_PATH: "/data/models/${LLAMA_MODEL_NAME}"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - count: all
-              capabilities: [gpu]
-  focus-grammar:
+  fokus-grammar:
     build: ./backend
-    container_name: focus-grammar
+    container_name: fokus-grammar
     restart: unless-stopped
     network_mode: "service:network-service"
     volumes:
       - ./backend/data:/app/data
+    depends_on:
+      - qdrant
+      - llama
     environment:
       LLAMA_SERVER: ${LLAMA_SERVER}
       LLAMA_CPP_API_URL: ${LLAMA_CPP_API_URL}
@@ -50,6 +48,16 @@ services:
       DEFAULT_MODEL_PROVIDER: ${DEFAULT_MODEL_PROVIDER}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       GOOGLE_MODEL_NAME: ${GOOGLE_MODEL_NAME}
+      QDRANT_URL: ${QDRANT_URL}
+      CUDA_VISIBLE_DEVICES: "" 
+  
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    restart: unless-stopped
+    volumes:
+      - ./data-qdrant:/qdrant/storage
+    network_mode: "service:network-service"
   
   network-service:
     image: alpine
@@ -57,7 +65,9 @@ services:
     restart: unless-stopped
     ports:
       - 5000:5000 # fokus-grammar
-      - 8000:8000
+      - 8000:8000 # Llama.cpp
+      - 6333:6333 # Standard Qdrant port
+      - 6334:6334 # gRPC port
 
     command: tail -f /dev/null
     networks:
@@ -72,5 +82,4 @@ services:
           memory: 200M
 
 volumes:
-  focus-grammar: {}
-  llama: {}
+  qdrant-data: {}

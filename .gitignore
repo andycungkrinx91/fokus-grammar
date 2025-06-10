@@ -38,6 +38,9 @@ backend/data/audio/*.wav
 # Data llama.cpp
 data-llama/models/*
 
+# Data Qdrant
+data-qdrant/*
+
 # IDE specific files
 .idea/
 .vscode/

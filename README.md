@@ -1,6 +1,15 @@
 # Fokus Grammar
 
-A web application for English grammar practice with AI assistance. This application allows users to practice grammar with AI-generated questions and receive AI-powered feedback on their answers.
+A web application for English grammar practice with AI assistance. This application allows users to practice grammar with AI-generated questions and receive AI-powered feedback on their answers.<BR>
+This techstack already build with RAG (Retrieval-Augmented Generation)
+
+## Techstack
+- Python 3.12 (FastAPI)
+- SentenceTransformer Embedding models (all-MiniLM-L6-v2)
+- Llama.cpp (Qwen3-4B)
+- Google AI Studio (gemini-1.5-flash-latest)
+- Qdrant (Vector database)
+- Edge-tts (en-US-AnaNeural)
 
 ## Features
 
@@ -9,58 +18,43 @@ A web application for English grammar practice with AI assistance. This applicat
 - Customizable difficulty levels (easy, medium, hard)
 - Option to specify grammar topics
 - Detailed feedback and explanations for answers
-- Text-to-speech functionality for questions (with show/hide text option)
-- Simple and intuitive user interface
+- Text-to-speech functionality for questions
+- 
 
 ## Requirements
 
-- Python 3.9 or higher
-- Poetry (for dependency management)
-- Llama running locally with a compatible model (e.g., OpenChat-3.5-7B-Qwen-v2.0.Q4_K_M.gguf)
-- Speakers or headphones for audio playback
+- Docker
+
 
 ## Installation
 
-1. Make sure you have Poetry installed. If not, follow the installation instructions at [Python Poetry](https://python-poetry.org/docs/#installation)
+1. You just need Install docker
 
-2. Clone this repository or download the source code
+2. Clone this repository
 
-3. Install dependencies using Poetry:
-   ```
-   poetry install
-   ```
+3. cd fokus-grammar
+
 
 ## Running the Application
 
-1. Start Llama and load a compatible model (e.g., OpenChat-3.5-7B-Qwen-v2.0.Q4_K_M.gguf)
-2. Make sure the Llama API server is running on http://localhost:8000
-3. Run the application using the provided batch file:
-   ```
-   run.bat
-   ```
-4. Open your web browser and navigate to http://127.0.0.1:5000
+1. copy .env.example to .env
+2. Update your .env
+3. Download models https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/main/Qwen3-4B-UD-Q4_K_XL.gguf?download=true
+4. Move model after downloaded under folder data-llama/models/<your_models>
+5. If you want use Google AI Studio just go to https://aistudio.google.com/, generate your api key, update your .env DEFAULT_MODEL_PROVIDER="google_ai" and GOOGLE_API_KEY=<your_google_api_key_here>
+6. docker network create grammar-network
+7. docker compose --compatibility -f docker-compose.yaml up -d --build --force-recreate --remove-orphans (or you can just run ./run.sh)
 
-## How to Use
-
-1. Select the difficulty level (easy, medium, or hard)
-2. Optionally, specify a grammar topic (e.g., "Past Tense", "Articles", etc.)
-3. Click "Generate New Question" to create a new grammar question
-4. Listen to the question audio or click "Show Question" to read the text
-5. Select your answer from the multiple-choice options
-6. Click "Check Answer" to submit your answer and receive feedback
-7. Review the feedback and explanation to improve your understanding
+## How to Use Backend
+1. See readme.txt for check test backend
 
 ## Llama Integration
 
-This application integrates with Llama to generate grammar questions and provide feedback. Make sure Llama is running with a compatible model before using the application.
+This application integrates with Llama or Google AI Studio to generate grammar questions and provide feedback.
 
-## File Structure
-
-- `app.py`: Main Flask application
-- `templates/`: HTML templates
-- `static/`: Static files (CSS, JavaScript)
-  - `static/audio/`: Generated audio files for questions
-- `data/`: Directory for storing grammar questions
+## Todo
+1. Create frontend from streamlite/vueJs/ReactJs
+2. Create audio translate realtime from Bahasa to English or english to Bahasa
 
 ## License
 
